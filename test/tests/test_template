@@ -1,0 +1,13 @@
+#include <easy_quantum>
+
+using_ns_easyquantum
+
+Test(testtemplate) {
+	TestResult res;
+
+	res &= testcheck(true, "Nothing");
+	res &= testcheck(!false);
+
+	return res;
+}
+

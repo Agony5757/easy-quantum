@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.1)
+file(GLOB EasyQuantum_SRC_H ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
+file(GLOB EasyQuantum_SRC_CPP ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+add_library(EasyQuantumStatic STATIC ${EasyQuantum_SRC_H} ${EasyQuantum_SRC_CPP})
+add_library(EasyQuantumShared SHARED ${EasyQuantum_SRC_H} ${EasyQuantum_SRC_CPP})
