@@ -30,97 +30,6 @@ constexpr double quantum_default_threshold = 1e-8;
 template<typename T> class Circuit;
 template<typename T> class Gate;
 
-template<typename qtraits_t = default_qtraits>
-struct VariableImpl {
-	using qtraits = qtraits_t;
-	using circuit_t = Circuit<qtraits>;
-	using gate_t = Gate<qtraits>;
-	using fp_t = typename qtraits::value_t;
-	using gaterefs_t = std::vector<Gate<qtraits_t>*>;
-	using tape_t = std::map<Circuit<qtraits_t>*, gaterefs_t>;
-	using tape_iterator_t = typename tape_t::iterator;
-
-	tape_t tape;
-	fp_t value;
-
-	VariableImpl() { value = 0; }
-	VariableImpl(double setval) { value = setval; }
-	VariableImpl(const VariableImpl<qtraits>& v) = delete;
-
-	tape_iterator_t find_circuit(circuit_t* c) {
-		auto citer = tape.find(c);
-		assert(citer != tape.end(), "Trying to find a circuit not recorded.");
-		return citer;
-	}
-
-	size_t size(circuit_t* c) {	
-		find_circuit(c);
-		return tape[c].size();
-	}
-
-	void add_ref(circuit_t* c, gate_t* g) {
-		tape[c].push_back(g);
-	}
-
-	void dec_ref(circuit_t* c) {
-		auto citer = tape.find(c);
-		if (citer != tape.end())
-			tape.erase(citer);
-	}
-
-	void refresh(circuit_t* c) {
-		auto citer = find_circuit(c);
-		for (auto gate : tape[c]) {
-			gate->argument = value;
-		}
-	}
-
-	void temporarily_set(circuit_t *c, size_t n_th, fp_t offset) {		
-		for (size_t i = 0; i < size(c); ++i) {
-			if (i != n_th)
-				tape[c][i]->argument = value;
-			else
-				tape[c][i]->argument = value + offset;
-		}
-	}
-
-	void set_value(fp_t new_value) {
-		value = new_value;
-	}
-};
-
-template<typename qtraits_t = default_qtraits>
-struct Variable {
-	using fp_t = typename qtraits_t::value_t;
-	using circuit_t = typename VariableImpl<qtraits_t>::circuit_t;
-	std::shared_ptr<VariableImpl<qtraits_t>> impl;
-
-	Variable(const Variable<qtraits_t>& v) {
-		impl = v.impl;
-	}
-	Variable(fp_t value = 0) {
-		impl = std::make_shared<VariableImpl<qtraits_t>>(value);
-	}
-	VariableImpl<qtraits_t> * operator->() {
-		return impl.get();
-	}
-	void set_value(fp_t value) {
-		impl->set_value(value);
-	}
-	void set_offset(fp_t offset) {
-		impl->set_value(impl->value + offset);
-	}
-	size_t size(circuit_t* c) {
-		return impl->size(c);
-	}
-	void temporarily_set(circuit_t* c, size_t n_th, fp_t offset) {
-		impl->temporarily_set(c, n_th, offset);
-	}
-	void refresh(circuit_t* c) {
-		impl->refresh(c);
-	}
-};
-
 template<typename qtraits = default_qtraits>
 class Gate {
 public:
@@ -129,8 +38,6 @@ public:
 
 	std::vector<qid> qubits;
 	fp_t argument;
-	Variable<qtraits> var;
-	bool isvar = false;
 	GateType type = GateType::null;
 	std::vector<qid> controllers;
 	bool dag = false;
@@ -142,21 +49,12 @@ public:
 		qubits(qs.begin(), qs.end()),
 		argument(arg) {}
 
-	Gate(GateType type_, std::vector<qid> qs, Variable<qtraits> var_)
-		: type(type_),
-		qubits(qs.begin(), qs.end()),
-		var(var_),
-		argument(var_->value),
-		isvar(true) {}
-
 	Gate(const Gate<qtraits>& g) {
 		qubits.assign(g.qubits.begin(), g.qubits.end());
 		argument = g.argument;
 		type = g.type;
 		controllers.assign(g.controllers.begin(), g.controllers.end());
 		dag = g.dag;
-		var = g.var;
-		isvar = g.isvar;
 	}
 
 	Gate<qtraits> valuecopy() const {
@@ -167,12 +65,6 @@ public:
 		g.controllers = controllers;
 		g.dag = dag;
 		return g;
-	}
-
-	Gate<qtraits>& record(Variable<qtraits>& v) {
-		var = v;
-		isvar = true;
-		return *this;
 	}
 
 	void dagger() {
@@ -354,21 +246,6 @@ Gate<qtraits> I(typename qtraits::qidx_t q, size_t time) {
 	return Gate(GateType::I, { q }, (fp_t)time);
 }
 
-template<typename qtraits = default_qtraits>
-Gate<qtraits> RX(typename qtraits::qidx_t q, Variable<qtraits> arg) {
-	return Gate<qtraits>(GateType::RX, { q }, arg);
-}
-
-template<typename qtraits = default_qtraits>
-Gate<qtraits> RY(typename qtraits::qidx_t q, Variable<qtraits> arg) {
-	return Gate<qtraits>(GateType::RY, { q }, arg);
-}
-
-template<typename qtraits = default_qtraits>
-Gate<qtraits> RZ(typename qtraits::qidx_t q, Variable<qtraits> arg) {
-	return Gate<qtraits>(GateType::RZ, { q }, arg);
-}
-
 class flatten {};
 
 template<typename qtraits = default_qtraits>
@@ -387,9 +264,6 @@ public:
 			max_qubit = c.max_qubit;
 		for (auto gate : c.gates) {
 			gates.push_back(gate);
-			if (gate.isvar) {
-				gate.var->add_ref(this, std::addressof(gates.back()));
-			}
 		}
 	}
 
@@ -414,15 +288,11 @@ public:
 			}
 		}
 		gates.push_back(g);
-		if (g.isvar) {
-			g.var->add_ref(this, std::addressof(gates.back()));
-		}
 		return *this;
 	}
 
 	Circuit& operator-(flatten flatten) {
 		for (auto &gate : gates) {
-			assert(!gate.isvar, "Not support variable gate flatten.");
 			if (gate.dag) {
 				gate.dag = false;
 				switch (gate.type) {
@@ -487,13 +357,7 @@ public:
 		return ss.str();
 	}
 
-	~Circuit() {
-		for (auto& gate : gates) {
-			if (gate.isvar) {
-				gate.var->dec_ref(this);
-			}
-		}
-	}
+	~Circuit() {}
 };
 
 void get_damping_kraus_op(

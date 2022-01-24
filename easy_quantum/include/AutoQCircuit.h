@@ -84,10 +84,10 @@ struct pool {
 };
 
 template<size_t i>
-static std::map<size_t, pool<i>> pool<i>::_pools;
+std::map<size_t, pool<i>> pool<i>::_pools;
 
 template<size_t i>
-static size_t pool<i>::_context_id = 0;
+size_t pool<i>::_context_id = 0;
 
 using qubitpool = pool<1>;
 using cbitpool = pool<2>;
@@ -112,8 +112,6 @@ class qubit {
 	~qubit() {
 		qubitpool::instance(pool_id).destruct(id);
 	}
-
-	qubit(const qubit&) = delete;
 };
 
 class cbit {

@@ -32,9 +32,9 @@ struct quantum_traits {
 using default_qtraits = quantum_traits<double, uint64_t, int>;
 
 /* For loops */
-#define Size(container) container.size()
+#define For_Size(container) container.size()
 #define For(container, elem, start, stop) for(size_t elem = start; elem < stop; ++ elem)
-#define ForAll(container, elem) For(container, elem, 0, Size(container))
+#define ForAll(container, elem) For(container, elem, 0, For_Size(container))
 #define ForAlli(container) ForAll(container,i)
 #define Loop(N, i) for (size_t i=0;i<N;++i)
 #define LoopA(N) Loop(N, ____slslslsls____)

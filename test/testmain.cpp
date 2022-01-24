@@ -32,31 +32,6 @@ void test1() {
 	}
 }
 
-template<typename qtraits>
-Circuit<qtraits> getcircuit(Variable<qtraits> &a) {
-	Circuit<qtraits> cir;
-	cir - RX(0, a)
-		- RX(1, a)
-		- RX(2, a)
-		- RX(3, 0)
-		- RX(4, a);
-
-	return cir;
-}
-
-void test3() {
-	Variable<default_qtraits> a(20);	
-	Circuit cir = getcircuit<default_qtraits>(a);
-	Circuit cir2;
-
-	cir2 - cir.valuecopy()
-		- RX(1, a);
-	cout << cir.to_qasm();
-	cout << cir2.to_qasm();
-	a.set_value(50);
-	cout << cir.to_qasm();
-	cout << cir2.to_qasm();
-}
 
 void test4() {
 
@@ -92,81 +67,6 @@ void test5() {
 	else {
 		cout << "Fail";
 	}
-}
-
-void test6() {
-	using qid = typename default_qtraits::qidx_t;
-	using fp_t = typename default_qtraits::value_t;
-	Hamiltonian<default_qtraits> h(
-		{
-			{ { { 'x',1 }, {'z',2} }, 3.5},
-			{ { { 'z',1 }, {'z',3} }, 3.5}
-		});
-
-	//c.max_qubit = 4;
-	Circuit<default_qtraits> c;
-	c - RX(0, 2.3);
-	c - RX(1, 4.0);
-	c - RX(2, 1.7);
-	c - RX(3, 0.8);
-	ObjectiveFunction obj({}, c, h);
-
-	fp_t exp1 = obj.get_expectation_montecarlo(100000, single_thread, noise_free);
-	cout << "expectation (monte) (st) = " << exp1 << endl;
-
-	fp_t exp2 = obj.get_expectation_montecarlo(100000, multi_threads, noise_free);
-	cout << "expectation (monte) (mt) = " << exp2 << endl;
-
-	fp_t exp3 = obj.get_expectation_prob_noisefree();
-	cout << "expectation (probs) (st) = " << exp3 << endl;
-}
-
-void test7() {
-	using qid = typename default_qtraits::qidx_t;
-	using fp_t = typename default_qtraits::value_t;
-	Hamiltonian<default_qtraits> h(
-		{
-			{ { { 'x',1 }, {'z',2} }, 3.5},
-			{ { { 'z',1 }, {'z',3} }, 3.5}
-		});
-	Variable<default_qtraits> v;
-	Circuit<default_qtraits> c;
-	c - RX(0, v);
-	c - RX(1, 4.0);
-	c - RX(2, 1.7);
-	c - RX(3, 0.8);
-	//c.max_qubit = 4;
-
-	ObjectiveFunction obj({v}, c, h);
-	v.set_value(2.3);
-
-	fp_t exp = obj.get_expectation_prob_noisefree();
-	cout << "expectation (probs) = " << exp << endl;
-
-	vector<fp_t> der = obj.get_derivatives_prob_noisefree();
-	cout << "derivative (probs) = " << der[0] << endl;
-}
-
-void test7_1() {
-	using qid = typename default_qtraits::qidx_t;
-	using fp_t = typename default_qtraits::value_t;
-	Hamiltonian<default_qtraits> h(
-		{
-			{ { { 'z',0 }, }, 15},
-		});
-	Variable<default_qtraits> v;
-	Circuit<default_qtraits> c;
-	c - RX(0, v);
-	//c.max_qubit = 4;
-
-	ObjectiveFunction obj({ v }, c, h);
-	v.set_value(pi);
-
-	fp_t exp = obj.get_expectation_prob_noisefree();
-	cout << "expectation (probs) = " << exp << endl;
-
-	vector<fp_t> der = obj.get_derivatives_prob_noisefree();
-	cout << "derivative (probs) = " << der[0] << endl;
 }
 
 int main() {

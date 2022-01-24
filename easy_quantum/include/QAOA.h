@@ -170,7 +170,6 @@ struct QAOA_Problem {
 	static constexpr size_t n_vertices = QAOA_Graph::n_vertices;
 
 	std::unique_ptr<QAOA_Graph> graph = nullptr;
-	std::unique_ptr<ObjectiveFunction<qtraits>> obj = nullptr;
 
 	QAOA_Problem(const QAOA_Graph &g) :graph(g) {	}
 

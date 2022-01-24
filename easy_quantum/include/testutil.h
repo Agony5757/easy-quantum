@@ -180,15 +180,6 @@ ns_end
 #define Test(testname) \
 TestResult testname(); RegisterTest(testname); TestResult testname()
 
-/* For loops */
-#define Size(container) container.size()
-#define For(container, elem, start, stop) for(size_t elem = start; elem < stop; ++ elem)
-#define ForAll(container, elem) For(container, elem, 0, Size(container))
-#define ForAlli(container) ForAll(container,i)
-#define Loop(N, i) for (size_t i=0;i<N;++i)
-#define LoopA(N) Loop(N, ____slslslsls____)
-#define LoopI(N) Loop(N, i)
-
 /* Time Elapsed */
 #define DefineTimer(timer) std::chrono::steady_clock::time_point timer
 #define StartTimer(timer) timer = std::chrono::steady_clock::now()
