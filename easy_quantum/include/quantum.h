@@ -493,10 +493,10 @@ public:
 		qid qsize = c.max_qubit;
 		/* one_qubit_damping_kraus */
 		for (qid i = 0; i < qsize; ++i) {
-			fp_t *kraus0_real = (fp_t*)malloc(4 * sizeof(fp_t));
-			fp_t *kraus0_imag = (fp_t*)malloc(4 * sizeof(fp_t));
-			fp_t *kraus1_real = (fp_t*)malloc(4 * sizeof(fp_t));
-			fp_t *kraus1_imag = (fp_t*)malloc(4 * sizeof(fp_t));
+			fp_t *kraus0_real = new fp_t[4];
+			fp_t *kraus0_imag = new fp_t[4];
+			fp_t *kraus1_real = new fp_t[4];
+			fp_t *kraus1_imag = new fp_t[4];
 
 			get_damping_kraus_op(kraus0_real, kraus0_imag,
 				kraus1_real, kraus1_imag,
